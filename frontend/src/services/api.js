@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ai-based-personalized-workload-optimizer-fq42.onrender.com';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -37,7 +37,7 @@ async function request(endpoint, options = {}) {
     return await res.json();
   } catch (err) {
     if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-      throw new Error(`Cannot connect to Backend API at ${API_BASE_URL}. Ensure FastAPI is running on port 8000.`);
+      throw new Error(`Cannot connect to Backend API at ${API_BASE_URL}. If using Render free tier, please allow 30–60 seconds for the service to wake up.`);
     }
     throw err;
   }

@@ -120,7 +120,7 @@ export default function App() {
           {!backendOnline && (
             <AlertBanner 
               type="error"
-              message="Cannot connect to FastAPI backend server (http://127.0.0.1:8000). Please start the backend in a terminal using: .\venv\Scripts\uvicorn.exe app.main:app --reload --port 8000"
+              message="Cannot connect to FastAPI backend server (https://ai-based-personalized-workload-optimizer-fq42.onrender.com). If Render is idle, it may take 30–60 seconds to spin up on cold start."
             />
           )}
 
