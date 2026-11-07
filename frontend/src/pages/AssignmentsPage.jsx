@@ -17,7 +17,7 @@ import { api } from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertBanner from '../components/AlertBanner';
 
-export default function AssignmentsPage({ setCurrentPage, setSelectedAssignmentId, showNotification }) {
+export default function AssignmentsPage({ setCurrentPage, setSelectedAssignmentId, showNotification, backendOnline }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,15 +52,19 @@ export default function AssignmentsPage({ setCurrentPage, setSelectedAssignmentI
       const data = await api.getAssignments();
       setAssignments(data);
     } catch (err) {
-      showNotification('error', `Failed to load assignments: ${err.message}`);
+      if (backendOnline !== null) {
+        showNotification('error', `Failed to load assignments: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAssignments();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchAssignments();
+    }
+  }, [backendOnline]);
 
   const resetForm = () => {
     setFormData({

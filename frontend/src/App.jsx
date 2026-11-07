@@ -22,6 +22,7 @@ export default function App() {
 
   // Global status states
   const [backendOnline, setBackendOnline] = useState(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [aiStatus, setAiStatus] = useState(null);
   const [remindersCount, setRemindersCount] = useState(0);
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -36,12 +37,17 @@ export default function App() {
     }, 6000);
   };
 
-  const checkSystemStatus = async () => {
+  const checkSystemStatus = async (manual = false) => {
+    if (manual) {
+      setIsRetrying(true);
+      setBackendOnline(null);
+    }
     try {
       await api.checkHealth();
       setBackendOnline(true);
     } catch (err) {
       setBackendOnline(false);
+      if (manual) setIsRetrying(false);
       return;
     }
 
@@ -58,12 +64,14 @@ export default function App() {
       setRemindersCount(unread);
     } catch (err) {
       console.warn('Failed to fetch reminders:', err);
+    } finally {
+      if (manual) setIsRetrying(false);
     }
   };
 
   useEffect(() => {
     checkSystemStatus();
-    const interval = setInterval(checkSystemStatus, 15000);
+    const interval = setInterval(() => checkSystemStatus(false), 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -132,6 +140,16 @@ export default function App() {
             <AlertBanner 
               type="error"
               message="Cannot connect to FastAPI backend server (https://ai-based-personalized-workload-optimizer-fq42.onrender.com). If Render is idle, it may take 30–60 seconds to spin up on cold start."
+              action={
+                <button
+                  onClick={() => checkSystemStatus(true)}
+                  disabled={isRetrying}
+                  className="btn btn-sm"
+                  style={{ background: '#dc2626', color: 'white', border: 'none', padding: '5px 12px', fontSize: '0.78rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  {isRetrying ? 'Connecting...' : 'Retry Connection'}
+                </button>
+              }
             />
           )}
           {backendOnline === null && (
@@ -146,6 +164,7 @@ export default function App() {
             <Dashboard 
               setCurrentPage={setCurrentPage} 
               showNotification={showNotification} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'assignments' && (
@@ -153,6 +172,7 @@ export default function App() {
               setCurrentPage={setCurrentPage} 
               setSelectedAssignmentId={setSelectedAssignmentId} 
               showNotification={showNotification} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'upload' && (
@@ -168,22 +188,26 @@ export default function App() {
               setSelectedAssignmentId={setSelectedAssignmentId} 
               setCurrentPage={setCurrentPage} 
               showNotification={showNotification} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'timetable' && (
             <DailyTimetablePage 
               showNotification={showNotification} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'analytics' && (
             <ProgressAnalyticsPage 
               showNotification={showNotification} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'reminders' && (
             <RemindersPage 
               showNotification={showNotification} 
               onReminderUpdate={checkSystemStatus} 
+              backendOnline={backendOnline} 
             />
           )}
           {currentPage === 'assistant' && (

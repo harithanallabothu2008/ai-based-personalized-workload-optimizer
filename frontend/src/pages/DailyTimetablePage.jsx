@@ -17,7 +17,7 @@ import {
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
 
-export default function DailyTimetablePage({ showNotification }) {
+export default function DailyTimetablePage({ showNotification, backendOnline }) {
   const [sessions, setSessions] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [explanation, setExplanation] = useState('');
@@ -42,15 +42,19 @@ export default function DailyTimetablePage({ showNotification }) {
       const data = await api.getAllSessions();
       setSessions(data);
     } catch (err) {
-      showNotification('error', `Failed to load sessions: ${err.message}`);
+      if (backendOnline !== null) {
+        showNotification('error', `Failed to load sessions: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTimetable();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchTimetable();
+    }
+  }, [backendOnline]);
 
   const handleGenerateSchedule = async () => {
     setGenerating(true);

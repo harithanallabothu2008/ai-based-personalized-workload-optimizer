@@ -15,7 +15,7 @@ import {
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
 
-export default function RemindersPage({ showNotification, onReminderUpdate }) {
+export default function RemindersPage({ showNotification, onReminderUpdate, backendOnline }) {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -38,18 +38,22 @@ export default function RemindersPage({ showNotification, onReminderUpdate }) {
       setReminders(data);
       if (onReminderUpdate) onReminderUpdate();
     } catch (err) {
-      showNotification('error', `Failed to load reminders: ${err.message}`);
+      if (backendOnline !== null) {
+        showNotification('error', `Failed to load reminders: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReminders();
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchReminders();
+    }
     if ('Notification' in window) {
       setBrowserPermission(Notification.permission);
     }
-  }, []);
+  }, [backendOnline]);
 
   const handleRequestBrowserPermission = async () => {
     if (!('Notification' in window)) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 
-export default function AlertBanner({ type = 'info', message, onClose }) {
+export default function AlertBanner({ type = 'info', message, onClose, action }) {
   if (!message) return null;
 
   const styles = {
@@ -21,23 +21,29 @@ export default function AlertBanner({ type = 'info', message, onClose }) {
       padding: '12px 16px',
       borderRadius: '10px',
       display: 'flex',
-      alignItems: 'flex-start',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       gap: '12px',
       marginBottom: '20px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
     }}>
-      <Icon size={18} style={{ color: styles.iconColor, flexShrink: 0, marginTop: '2px' }} />
-      <div style={{ flex: 1, fontSize: '0.875rem', lineHeight: 1.45, fontWeight: '500' }}>
-        {message}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+        <Icon size={18} style={{ color: styles.iconColor, flexShrink: 0 }} />
+        <div style={{ fontSize: '0.875rem', lineHeight: 1.45, fontWeight: '500' }}>
+          {message}
+        </div>
       </div>
-      {onClose && (
-        <button 
-          onClick={onClose} 
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: styles.text, opacity: 0.7 }}
-        >
-          <X size={16} />
-        </button>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {action}
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: styles.text, opacity: 0.7 }}
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

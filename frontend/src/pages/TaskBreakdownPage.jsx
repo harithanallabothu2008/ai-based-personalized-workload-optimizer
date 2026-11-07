@@ -22,7 +22,8 @@ export default function TaskBreakdownPage({
   selectedAssignmentId, 
   setSelectedAssignmentId, 
   setCurrentPage, 
-  showNotification 
+  showNotification,
+  backendOnline
 }) {
   const [assignments, setAssignments] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -67,15 +68,19 @@ export default function TaskBreakdownPage({
         setTasks([]);
       }
     } catch (err) {
-      showNotification('error', `Failed to load tasks: ${err.message}`);
+      if (backendOnline !== null) {
+        showNotification('error', `Failed to load tasks: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAssignmentsAndTasks();
-  }, [selectedAssignmentId]);
+    if (backendOnline === true || backendOnline === undefined) {
+      loadAssignmentsAndTasks();
+    }
+  }, [selectedAssignmentId, backendOnline]);
 
   const handleSelectAssignment = async (e) => {
     const id = parseInt(e.target.value);

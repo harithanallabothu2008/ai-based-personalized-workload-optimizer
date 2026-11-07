@@ -16,7 +16,7 @@ import {
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
 
-export default function Dashboard({ setCurrentPage, showNotification }) {
+export default function Dashboard({ setCurrentPage, showNotification, backendOnline }) {
   const [analytics, setAnalytics] = useState(null);
   const [todaySessions, setTodaySessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,15 +34,20 @@ export default function Dashboard({ setCurrentPage, showNotification }) {
       setAnalytics(analyticsData);
       setTodaySessions(todayData);
     } catch (err) {
-      setError(err.message);
+      // If backend is still establishing connection, don't show noisy error yet
+      if (backendOnline !== null) {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchDashboardData();
+    }
+  }, [backendOnline]);
 
   const handleGenerateSchedule = async () => {
     setGenerating(true);
@@ -82,7 +87,22 @@ export default function Dashboard({ setCurrentPage, showNotification }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {error && <AlertBanner type="error" message={error} onClose={() => setError(null)} />}
+      {error && (
+        <AlertBanner 
+          type="error" 
+          message={error} 
+          onClose={() => setError(null)} 
+          action={
+            <button
+              onClick={fetchDashboardData}
+              className="btn btn-sm"
+              style={{ background: '#dc2626', color: 'white', border: 'none', padding: '4px 10px', fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              Retry
+            </button>
+          }
+        />
+      )}
 
       {/* Top Banner with Quick Actions */}
       <div className="card" style={{

@@ -25,7 +25,7 @@ import {
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
 
-export default function ProgressAnalyticsPage({ showNotification }) {
+export default function ProgressAnalyticsPage({ showNotification, backendOnline }) {
   const [analytics, setAnalytics] = useState(null);
   const [workHistory, setWorkHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,15 +40,19 @@ export default function ProgressAnalyticsPage({ showNotification }) {
       setAnalytics(aData);
       setWorkHistory(hData);
     } catch (err) {
-      showNotification('error', `Failed to load analytics: ${err.message}`);
+      if (backendOnline !== null) {
+        showNotification('error', `Failed to load analytics: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchAnalytics();
+    }
+  }, [backendOnline]);
 
   if (loading) {
     return (
