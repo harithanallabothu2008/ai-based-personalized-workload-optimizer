@@ -21,7 +21,7 @@ export default function App() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
 
   // Global status states
-  const [backendOnline, setBackendOnline] = useState(false);
+  const [backendOnline, setBackendOnline] = useState(null);
   const [aiStatus, setAiStatus] = useState(null);
   const [remindersCount, setRemindersCount] = useState(0);
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -38,15 +38,26 @@ export default function App() {
 
   const checkSystemStatus = async () => {
     try {
-      const health = await api.checkHealth();
+      await api.checkHealth();
       setBackendOnline(true);
+    } catch (err) {
+      setBackendOnline(false);
+      return;
+    }
+
+    try {
       const status = await api.getAssistantStatus();
       setAiStatus(status);
+    } catch (err) {
+      console.warn('Failed to fetch assistant status:', err);
+    }
+
+    try {
       const reminders = await api.getReminders(false);
       const unread = reminders.filter(r => !r.is_read).length;
       setRemindersCount(unread);
     } catch (err) {
-      setBackendOnline(false);
+      console.warn('Failed to fetch reminders:', err);
     }
   };
 
@@ -117,10 +128,16 @@ export default function App() {
             />
           )}
 
-          {!backendOnline && (
+          {backendOnline === false && (
             <AlertBanner 
               type="error"
               message="Cannot connect to FastAPI backend server (https://ai-based-personalized-workload-optimizer-fq42.onrender.com). If Render is idle, it may take 30–60 seconds to spin up on cold start."
+            />
+          )}
+          {backendOnline === null && (
+            <AlertBanner 
+              type="info"
+              message="Connecting to FastAPI backend on Render... If waking from idle, please allow a few seconds."
             />
           )}
 

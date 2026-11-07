@@ -47,12 +47,12 @@ export default function Navbar({
           borderRadius: '999px',
           fontSize: '0.75rem',
           fontWeight: '600',
-          background: backendOnline ? '#ecfdf5' : '#fef2f2',
-          color: backendOnline ? '#047857' : '#b91c1c',
-          border: `1px solid ${backendOnline ? '#a7f3d0' : '#fecaca'}`
+          background: backendOnline === true ? '#ecfdf5' : (backendOnline === null ? '#fefce8' : '#fef2f2'),
+          color: backendOnline === true ? '#047857' : (backendOnline === null ? '#a16207' : '#b91c1c'),
+          border: `1px solid ${backendOnline === true ? '#a7f3d0' : (backendOnline === null ? '#fef08a' : '#fecaca')}`
         }}>
-          {backendOnline ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-          <span>{backendOnline ? 'FastAPI & SQLite Online' : 'Backend Disconnected'}</span>
+          {backendOnline === true ? <CheckCircle2 size={13} /> : (backendOnline === null ? <RefreshCw size={13} className="spin" /> : <AlertCircle size={13} />)}
+          <span>{backendOnline === true ? 'FastAPI & SQLite Online' : (backendOnline === null ? 'Connecting...' : 'Backend Disconnected')}</span>
         </div>
 
         {/* AI mode pill */}
