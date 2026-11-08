@@ -139,7 +139,7 @@ export default function App() {
           {backendOnline === false && (
             <AlertBanner 
               type="error"
-              message="Cannot connect to FastAPI backend server (https://ai-based-personalized-workload-optimizer-pt3y.onrender.com). If Render is idle, it may take 30–60 seconds to spin up on cold start."
+              message={`Cannot connect to FastAPI backend server (${api.getActiveUrl()}). If Render is idle, it may take 30–60 seconds to spin up on cold start.`}
               action={
                 <button
                   onClick={() => checkSystemStatus(true)}

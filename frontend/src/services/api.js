@@ -1,4 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com';
+const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com';
+
+const CANDIDATE_URLS = [
+  DEFAULT_API_BASE_URL,
+  'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com',
+  'https://ai-based-personalized-workload-optimizer-fq42.onrender.com',
+  ...(typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? ['http://127.0.0.1:8000'] : [])
+].filter(Boolean);
+
+const UNIQUE_URLS = [...new Set(CANDIDATE_URLS)];
+
+let activeApiBase = UNIQUE_URLS[0] || 'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com';
 
 async function request(endpoint, options = {}) {
   const url = `${activeApiBase}${endpoint}`;
@@ -46,10 +57,14 @@ async function request(endpoint, options = {}) {
 export const api = {
   // Health with multi-service automatic discovery
   checkHealth: async () => {
+    const urlsToTry = [activeApiBase, ...UNIQUE_URLS.filter((u) => u !== activeApiBase)];
     let lastErr = null;
-    for (const baseUrl of UNIQUE_URLS) {
+    for (const baseUrl of urlsToTry) {
       try {
-        const res = await fetch(baseUrl + "/health");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(baseUrl + "/health", { signal: controller.signal });
+        clearTimeout(timeoutId);
         if (res.ok) {
           activeApiBase = baseUrl;
           return await res.json();
@@ -58,7 +73,7 @@ export const api = {
         lastErr = err;
       }
     }
-    throw new Error('Cannot connect to Backend API. If using Render free tier, please allow 30–60 seconds for the service to wake up.');
+    throw new Error(`Cannot connect to Backend API (${activeApiBase}). If using Render free tier, please allow 30–60 seconds for the service to wake up.`);
   },
   getActiveUrl: () => activeApiBase,
 
