@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com';
 
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${activeApiBase}${endpoint}`;
   const defaultHeaders = {};
 
   if (!(options.body instanceof FormData)) {
@@ -37,15 +37,30 @@ async function request(endpoint, options = {}) {
     return await res.json();
   } catch (err) {
     if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-      throw new Error(`Cannot connect to Backend API at ${API_BASE_URL}. If using Render free tier, please allow 30–60 seconds for the service to wake up.`);
+      throw new Error(`Cannot connect to Backend API at ${activeApiBase}. If using Render free tier, please allow 30–60 seconds for the service to wake up.`);
     }
     throw err;
   }
 }
 
 export const api = {
-  // Health
-  checkHealth: () => request('/health'),
+  // Health with multi-service automatic discovery
+  checkHealth: async () => {
+    let lastErr = null;
+    for (const baseUrl of UNIQUE_URLS) {
+      try {
+        const res = await fetch(baseUrl + "/health");
+        if (res.ok) {
+          activeApiBase = baseUrl;
+          return await res.json();
+        }
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw new Error('Cannot connect to Backend API. If using Render free tier, please allow 30–60 seconds for the service to wake up.');
+  },
+  getActiveUrl: () => activeApiBase,
 
   // Assignments
   getAssignments: () => request('/assignments'),
