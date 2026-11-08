@@ -231,6 +231,8 @@ class ExtractedAssignmentData(BaseModel):
     extraction_source: str  # "PyMuPDF" or "python-docx"
     raw_snippet: str
     has_detected_deadline: bool = False
+    document_filename: Optional[str] = None
+    document_path: Optional[str] = None
 
 # --- ASSISTANT SCHEMAS ---
 class AssistantAskRequest(BaseModel):

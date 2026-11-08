@@ -12,7 +12,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://ai-based-personalized-workload-optimizer-fq42.onrender.com',
+        target: 'https://ai-based-personalized-workload-optimizer-pt3y.onrender.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }

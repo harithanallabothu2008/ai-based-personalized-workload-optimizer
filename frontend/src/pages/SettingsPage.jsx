@@ -15,7 +15,7 @@ import { api } from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertBanner from '../components/AlertBanner';
 
-export default function SettingsPage({ showNotification, onResetAll }) {
+export default function SettingsPage({ showNotification, onResetAll, backendOnline }) {
   const [availability, setAvailability] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,8 +41,10 @@ export default function SettingsPage({ showNotification, onResetAll }) {
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      fetchSettings();
+    }
+  }, [backendOnline]);
 
   const handleAvailabilityChange = (index, field, value) => {
     const updated = [...availability];

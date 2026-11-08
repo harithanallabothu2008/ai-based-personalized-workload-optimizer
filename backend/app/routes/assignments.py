@@ -95,5 +95,7 @@ async def upload_assignment_document(file: UploadFile = File(...)):
         suggested_estimated_hours=analysis["suggested_estimated_hours"],
         extraction_source=analysis["extraction_source"],
         raw_snippet=analysis["raw_snippet"],
-        has_detected_deadline=analysis["has_detected_deadline"]
+        has_detected_deadline=analysis["has_detected_deadline"],
+        document_filename=file.filename or unique_name,
+        document_path=str(saved_path)
     )

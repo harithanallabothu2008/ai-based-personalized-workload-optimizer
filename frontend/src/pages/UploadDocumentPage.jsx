@@ -120,7 +120,8 @@ export default function UploadDocumentPage({ setCurrentPage, setSelectedAssignme
       difficulty: confirmForm.difficulty,
       estimated_duration: parseFloat(confirmForm.estimatedDuration),
       completion_status: 'Pending',
-      document_filename: selectedFile?.name || null
+      document_filename: extractedData?.document_filename || selectedFile?.name || null,
+      document_path: extractedData?.document_path || null
     };
 
     setSaving(true);

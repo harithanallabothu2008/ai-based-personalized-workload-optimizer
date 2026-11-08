@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -5,6 +6,7 @@ from ..database import get_db
 from ..models import Assignment
 from ..schemas import AssistantAskRequest, AssistantAskResponse
 from ..services.ai_service import AIService
+from ..services.document_service import DocumentService
 
 router = APIRouter(prefix="/assistant", tags=["AI Academic Assistant"])
 
@@ -17,10 +19,22 @@ async def ask_academic_assistant(request: AssistantAskRequest, db: Session = Dep
         assignment = db.query(Assignment).filter(Assignment.id == request.assignment_id).first()
         if assignment:
             assignment_title = assignment.title
+            doc_snippet = ""
+            if assignment.document_path:
+                try:
+                    f_path = Path(assignment.document_path)
+                    if f_path.exists():
+                        doc_text, _, _ = DocumentService.extract_text(f_path)
+                        if doc_text:
+                            doc_snippet = f"\nUploaded Document Excerpt:\n{doc_text[:1200]}"
+                except Exception:
+                    pass
+
             assignment_context = (
                 f"Subject: {assignment.subject}\n"
                 f"Assignment: {assignment.title}\n"
                 f"Instructions: {assignment.instructions or assignment.description or 'N/A'}"
+                f"{doc_snippet}"
             )
 
     result = await AIService.answer_academic_doubt(

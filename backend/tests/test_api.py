@@ -50,6 +50,25 @@ def setup_database():
 
 client = TestClient(app)
 
+def test_root_endpoint():
+    """Verify backend root endpoint returns 200 and system metadata"""
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "online"
+    assert "Academic Workload Optimizer" in data["app"]
+    assert data["documentation"] == "/docs"
+
+def test_docs_and_openapi():
+    """Verify Swagger docs and openapi.json return 200 OK"""
+    res_docs = client.get("/docs")
+    assert res_docs.status_code == 200
+    res_openapi = client.get("/openapi.json")
+    assert res_openapi.status_code == 200
+    schema = res_openapi.json()
+    assert "openapi" in schema
+    assert "paths" in schema
+
 def test_health_check():
     """Verify backend health endpoint"""
     response = client.get("/health")

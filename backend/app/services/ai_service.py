@@ -1,13 +1,20 @@
 import os
 import json
+import logging
 import httpx
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 class AIService:
     @staticmethod
     def get_api_key() -> Optional[str]:
-        key = os.getenv("LLM_API_KEY", "").strip()
-        return key if key else None
+        # Check standard and common alias variable names
+        for var_name in ("LLM_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"):
+            val = os.getenv(var_name, "").strip()
+            if val:
+                return val
+        return None
 
     @classmethod
     def is_ai_configured(cls) -> bool:
@@ -257,7 +264,7 @@ class AIService:
 
     @classmethod
     async def _call_gemini_for_tasks(cls, api_key: str, title: str, subject: str, desc: str, diff: str, hours: float) -> Optional[List[Dict[str, Any]]]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
         prompt = (
             f"You are an academic planning assistant. Break down this college assignment into 4 to 6 sequential tasks.\n"
             f"Title: {title}\nSubject: {subject}\nDescription: {desc}\nDifficulty: {diff}\nTotal Estimated Hours: {hours}\n"
@@ -275,41 +282,87 @@ class AIService:
             f"  }}\n"
             f"]"
         )
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
-            if resp.status_code == 200:
-                data = resp.json()
-                text_out = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if "```json" in text_out:
-                    text_out = text_out.split("```json")[1].split("```")[0].strip()
-                elif "```" in text_out:
-                    text_out = text_out.split("```")[1].split("```")[0].strip()
-                parsed = json.loads(text_out)
-                if isinstance(parsed, list):
-                    return parsed
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            for model in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                try:
+                    resp = await client.post(
+                        url,
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.2}
+                        }
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text_out = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if "```json" in text_out:
+                            text_out = text_out.split("```json")[1].split("```")[0].strip()
+                        elif "```" in text_out:
+                            text_out = text_out.split("```")[1].split("```")[0].strip()
+                        parsed = json.loads(text_out)
+                        if isinstance(parsed, list) and len(parsed) >= 2:
+                            return parsed
+                    elif resp.status_code in (404, 400):
+                        # Try next model in list
+                        continue
+                    else:
+                        logger.warning(f"Gemini API returned status {resp.status_code} on {model}")
+                except Exception as e:
+                    logger.warning(f"Gemini tasks error with model {model}: {e}")
+                    continue
         return None
 
     @classmethod
     async def _call_gemini_for_qa(cls, api_key: str, question: str, context: Optional[str]) -> Optional[Dict[str, Any]]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
         prompt = (
             f"You are a friendly, encouraging academic tutor for a B.Tech CSE student.\n"
             f"Context: {context or 'General Academic Coursework'}\n"
             f"Question: {question}\n\n"
-            f"Provide an explanation in clear, simple English, suitable for college review. Return JSON:\n"
-            f"{{\n"
-            f"  \"answer\": \"Detailed explanation with concepts and examples\",\n"
-            f"  \"suggested_steps\": [\"Step 1\", \"Step 2\", \"Step 3\"]\n"
-            f"}}"
+            f"Provide an explanation in clear, simple English, suitable for college review. "
+            f"If possible return JSON with fields 'answer' and 'suggested_steps' (a list of 3 actionable steps)."
         )
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
-            if resp.status_code == 200:
-                data = resp.json()
-                text_out = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if "```json" in text_out:
-                    text_out = text_out.split("```json")[1].split("```")[0].strip()
-                elif "```" in text_out:
-                    text_out = text_out.split("```")[1].split("```")[0].strip()
-                return json.loads(text_out)
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            for model in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                try:
+                    resp = await client.post(
+                        url,
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.3}
+                        }
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text_out = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        # Attempt JSON extraction
+                        clean_json_str = text_out
+                        if "```json" in clean_json_str:
+                            clean_json_str = clean_json_str.split("```json")[1].split("```")[0].strip()
+                        elif "```" in clean_json_str:
+                            clean_json_str = clean_json_str.split("```")[1].split("```")[0].strip()
+
+                        try:
+                            parsed = json.loads(clean_json_str)
+                            if isinstance(parsed, dict) and "answer" in parsed:
+                                return parsed
+                        except Exception:
+                            # If not strictly JSON, preserve Gemini's real text answer!
+                            return {
+                                "answer": text_out,
+                                "suggested_steps": [
+                                    "Review the theoretical concepts explained above",
+                                    "Implement a small test case to verify this behavior",
+                                    "Document your findings in your assignment notes"
+                                ]
+                            }
+                    elif resp.status_code in (404, 400):
+                        continue
+                    else:
+                        logger.warning(f"Gemini QA returned status {resp.status_code} for {model}")
+                except Exception as e:
+                    logger.warning(f"Gemini QA error with model {model}: {e}")
+                    continue
         return None

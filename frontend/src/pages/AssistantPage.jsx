@@ -13,7 +13,7 @@ import {
 import { api } from '../services/api';
 import AlertBanner from '../components/AlertBanner';
 
-export default function AssistantPage({ showNotification }) {
+export default function AssistantPage({ showNotification, backendOnline }) {
   const [assignments, setAssignments] = useState([]);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
   const [question, setQuestion] = useState('');
@@ -35,8 +35,10 @@ export default function AssistantPage({ showNotification }) {
         // Fallback silently if offline
       }
     };
-    init();
-  }, []);
+    if (backendOnline === true || backendOnline === undefined) {
+      init();
+    }
+  }, [backendOnline]);
 
   const sampleQuestions = [
     "What is the difference between Time and Space complexity with examples?",
